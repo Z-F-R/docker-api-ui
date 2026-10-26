@@ -1,0 +1,13 @@
+{
+  "name": "employee-management-e2e",
+  "private": true,
+  "description": "Playwright UI smoke suites for the Employee Management CRM, run in Docker",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
+  }
+}

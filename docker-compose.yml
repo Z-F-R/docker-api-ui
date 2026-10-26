@@ -5,7 +5,8 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      # Published on localhost only: the API is a test stand, not for the LAN
+      - "127.0.0.1:3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -32,13 +33,19 @@ services:
     env_file:
       - .env
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     depends_on:
       app:
         condition: service_healthy
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5173 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     profiles:
       - dev
       - e2e
@@ -76,28 +83,46 @@ services:
     profiles:
       - ci
 
-  # Playwright E2E testing service
-  # Note: Requires 'test:e2e' script in frontend/package.json
-  # Add to frontend/package.json: "test:e2e": "playwright test"
-  playwright:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: my_playwright
+  # Black-box API smoke suites: hit the running API container over HTTP
+  # Run: docker compose run --rm api-smoke
+  api-smoke:
+    build: .
+    container_name: my_api_smoke
     env_file:
-      - .env.e2e
+      - .env
+    environment:
+      API_URL: http://app:3000
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./smoke:/app/smoke:ro
+    # Skip the app entrypoint (migrations) - the smoke runner only sends HTTP requests
+    entrypoint: []
+    command: npx mocha "smoke/api/**/*.smoke.js" --timeout 15000
+    profiles:
+      - smoke
+
+  # Playwright UI smoke suites in the official Playwright image (browsers do not run on Alpine)
+  # Run: docker compose run --rm ui-smoke
+  ui-smoke:
+    build: ./e2e
+    container_name: my_ui_smoke
+    env_file:
+      - .env
+    environment:
+      CI: "true"
     depends_on:
       app:
         condition: service_healthy
       frontend:
-        condition: service_started
+        condition: service_healthy
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    # Update this command based on your E2E test setup
-    # Using 'exit 1' to fail explicitly if E2E tests are not configured
-    command: sh -c "echo 'E2E tests not configured. Add test:e2e script to frontend/package.json' && exit 1"
+      - ./e2e/tests:/e2e/tests:ro
+      - ./e2e/playwright-report:/e2e/playwright-report
+      - ./e2e/test-results:/e2e/test-results
     profiles:
+      - smoke
       - e2e
 
 volumes:

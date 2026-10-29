@@ -1,5 +1,4 @@
-// e2e/tests/navigation.smoke.spec.js
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 test.describe('@smoke Navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -28,7 +27,7 @@ test.describe('@smoke Navigation', () => {
   });
 
   test('logout returns to the login page', async ({ page }) => {
-    await page.getByRole('button', { name: 'Logout' }).first().click();
+    await page.getByRole('button', { name: 'Logout' }).click();
 
     await expect(page).toHaveURL(/\/login$/);
     await page.goto('/employees');

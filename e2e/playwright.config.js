@@ -1,4 +1,3 @@
-// e2e/playwright.config.js
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({

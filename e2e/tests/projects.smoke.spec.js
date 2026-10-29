@@ -1,5 +1,4 @@
-// e2e/tests/projects.smoke.spec.js
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { uid, deleteProjectByName } = require('./helpers');
 
 test.describe('@smoke Projects', () => {
@@ -17,9 +16,9 @@ test.describe('@smoke Projects', () => {
 
     const dialog = page.getByRole('dialog', { name: 'Create New Project' });
     await expect(dialog).toBeVisible();
-    await dialog.locator('#name').fill(projectName);
-    await dialog.locator('#description').fill('Project created by the Playwright smoke suite');
-    await dialog.locator('#wage').fill('2000');
+    await dialog.getByLabel('Project Name').fill(projectName);
+    await dialog.getByLabel('Description').fill('Project created by the Playwright smoke suite');
+    await dialog.getByLabel('Wage').fill('2000');
     await dialog.getByRole('button', { name: 'Create', exact: true }).click();
 
     // exact: the toast text is also mirrored into an aria-live region for screen readers

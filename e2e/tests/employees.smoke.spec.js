@@ -31,7 +31,8 @@ test.describe('@smoke Employees', () => {
       // The card: nearest block around the name that also holds the card's action buttons
       const card = title.locator('xpath=ancestor::div[.//button][1]');
       // Known app issue: the view button is icon-only and has no accessible name
-      // (EmployeesPage.jsx), so getByRole cannot find it - it is located by its icon
+      // (EmployeesPage.jsx), so getByRole cannot find it - it is located by its icon.
+      // https://github.com/Z-F-R/docker-api-ui/issues/4
       const viewButton = card.locator('button:has(svg.lucide-eye)');
       await expect(viewButton).toHaveCount(1);
       await viewButton.click();

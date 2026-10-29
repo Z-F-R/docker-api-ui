@@ -25,15 +25,16 @@ test.describe('@smoke Login', () => {
     const response = page.waitForResponse((r) => r.url().endsWith('/login') && r.request().method() === 'POST');
     await loginPage.login(ADMIN.email, 'wrong-password');
 
-    // Known app issue: 400 instead of the conventional 401, see DOCKER_TESTS.md "Known app issues"
+    // Known app issue: 400 instead of the conventional 401, https://github.com/Z-F-R/docker-api-ui/issues/1
     expect((await response).status()).toBe(400);
     await expect(page).toHaveURL(/\/login$/);
     expect(await page.evaluate(() => localStorage.getItem('token'))).toBeNull();
   });
 
   test('wrong password shows an error message', async ({ page, loginPage }) => {
-    // Known bug: <Toaster /> is mounted only inside Layout (authenticated pages),
+    // Known app issue: <Toaster /> is mounted only inside Layout (authenticated pages),
     // so toasts raised on /login and /register are never rendered - the user gets no feedback.
+    // https://github.com/Z-F-R/docker-api-ui/issues/3
     // Remove test.fail() once the bug is fixed; Playwright reports it if this starts passing.
     test.fail();
 

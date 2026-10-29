@@ -29,7 +29,7 @@ describe('Auth', () => {
       .send({ email: ADMIN.email, password: 'wrong-password' });
 
     // Known app issue: wrong credentials get 400 Bad Request, while 401 Unauthorized is the
-    // conventional status. Asserted as the app behaves today, see DOCKER_TESTS.md "Known app issues".
+    // conventional status. Asserted as the app behaves today: https://github.com/Z-F-R/docker-api-ui/issues/1
     expect(res.status).to.equal(400);
     expect(res.body).to.have.property('error');
     expect(res.body).to.not.have.property('token');
@@ -76,7 +76,7 @@ describe('Auth', () => {
 
     // Known app issue: an invalid token gets 403 Forbidden, while 401 Unauthorized is the
     // conventional status (403 means "authenticated, but not allowed").
-    // Asserted as the app behaves today, see DOCKER_TESTS.md "Known app issues".
+    // Asserted as the app behaves today: https://github.com/Z-F-R/docker-api-ui/issues/2
     expect(res.status).to.equal(403);
   });
 });

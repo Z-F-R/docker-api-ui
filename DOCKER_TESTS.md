@@ -131,12 +131,13 @@ addressed to `localhost`. Inside the `ui-smoke` container `socat` forwards `loca
 
 ## Known app issues
 
-Found by the suites in the application code, which this repository does not change. The tests assert the current
-behaviour and point here, so a fix in the app shows up as a failing test to update.
+Found by the suites in the application code, which this repository does not change. Each one is a GitHub issue.
+The tests assert the current behaviour and link to the issue, so a fix in the app shows up as a failing test to
+update.
 
-| # | Issue | Where it shows | Test |
+| Issue | Problem | Where it shows | Test |
 |---|---|---|---|
-| 1 | Wrong credentials return `400 Bad Request`; `401 Unauthorized` is the conventional status | `POST /login` | `02-auth.smoke.js`, `login.smoke.spec.js` |
-| 2 | A forged or invalid JWT returns `403 Forbidden`; `403` means "authenticated, but not allowed", an invalid token is `401` | auth middleware | `02-auth.smoke.js` |
-| 3 | Toasts on `/login` and `/register` never render: `<Toaster />` is mounted only in `Layout.jsx`, so a wrong password gives the user no message | `frontend/src/components/Layout.jsx` | `login.smoke.spec.js`, marked `test.fail()` |
-| 4 | The view (eye) button on an employee card is icon-only and has no accessible name, so screen readers and `getByRole` cannot find it; the spec locates it by its icon class | `frontend/src/pages/EmployeesPage.jsx` | `employees.smoke.spec.js` |
+| [#1](https://github.com/Z-F-R/docker-api-ui/issues/1) | Wrong credentials return `400 Bad Request`; `401 Unauthorized` is the conventional status | `POST /login` | `02-auth.smoke.js`, `login.smoke.spec.js` |
+| [#2](https://github.com/Z-F-R/docker-api-ui/issues/2) | A forged or invalid JWT returns `403 Forbidden`; `403` means "authenticated, but not allowed", an invalid token is `401` | auth middleware | `02-auth.smoke.js` |
+| [#3](https://github.com/Z-F-R/docker-api-ui/issues/3) | Toasts on `/login` and `/register` never render: `<Toaster />` is mounted only in `Layout.jsx`, so a wrong password gives the user no message | `frontend/src/components/Layout.jsx` | `login.smoke.spec.js`, marked `test.fail()` |
+| [#4](https://github.com/Z-F-R/docker-api-ui/issues/4) | The view (eye) button on an employee card is icon-only and has no accessible name, so screen readers and `getByRole` cannot find it; the spec locates it by its icon class | `frontend/src/pages/EmployeesPage.jsx` | `employees.smoke.spec.js` |

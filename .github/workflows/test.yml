@@ -54,3 +54,39 @@ jobs:
           publish_dir: ./docs
           destination_dir: docs
           commit_message: 'Deploy Swagger documentation'
+
+  # Black-box smoke gate: the full stack in Docker, API and UI suites against it
+  smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment files
+        run: |
+          cp .env.docker.example .env
+          cp .env.test.example .env.test
+
+      - name: Start db, API and frontend
+        run: docker compose up --build --detach --wait
+
+      - name: Run API smoke suites
+        run: docker compose run --rm api-smoke
+
+      - name: Run UI smoke suites
+        run: docker compose run --rm ui-smoke
+
+      - name: Upload Playwright report and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: docker compose --profile smoke down -v

@@ -24,6 +24,7 @@ services:
       - dev
       - ci
       - e2e
+      - smoke
 
   frontend:
     build:
@@ -49,6 +50,7 @@ services:
     profiles:
       - dev
       - e2e
+      - smoke
 
   db:
     image: postgres:16
@@ -66,6 +68,7 @@ services:
       - dev
       - ci
       - e2e
+      - smoke
 
   test:
     build: .
@@ -88,8 +91,7 @@ services:
   api-smoke:
     build: .
     container_name: my_api_smoke
-    env_file:
-      - .env
+    # Only what the runner needs - no DB password or JWT secret from .env
     environment:
       API_URL: http://app:3000
     depends_on:
@@ -99,7 +101,7 @@ services:
       - ./smoke:/app/smoke:ro
     # Skip the app entrypoint (migrations) - the smoke runner only sends HTTP requests
     entrypoint: []
-    command: npx mocha "smoke/api/**/*.smoke.js" --timeout 15000
+    command: npm run test:smoke
     profiles:
       - smoke
 
@@ -108,10 +110,13 @@ services:
   ui-smoke:
     build: ./e2e
     container_name: my_ui_smoke
-    env_file:
-      - .env
+    # Only what the runner needs - no DB password or JWT secret from .env
     environment:
-      CI: "true"
+      # Taken from the host: set in CI (retries, forbidOnly), empty when debugging locally
+      CI: ${CI:-}
+      # Linux hosts: owner for the report folders, e.g. HOST_UID=$(id -u) HOST_GID=$(id -g)
+      HOST_UID: ${HOST_UID:-}
+      HOST_GID: ${HOST_GID:-}
     depends_on:
       app:
         condition: service_healthy
@@ -119,6 +124,7 @@ services:
         condition: service_healthy
     volumes:
       - ./e2e/tests:/e2e/tests:ro
+      - ./e2e/playwright.config.js:/e2e/playwright.config.js:ro
       - ./e2e/playwright-report:/e2e/playwright-report
       - ./e2e/test-results:/e2e/test-results
     profiles:

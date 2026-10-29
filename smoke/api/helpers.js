@@ -1,7 +1,9 @@
-// smoke/api/helpers.js
 // Shared helpers for black-box API smoke suites.
 // Unlike tests/*.test.js (which import app.js in-process and reset the DB),
 // these suites talk to a running API over HTTP and never touch the database directly.
+//
+// Tags in test titles: @smoke - critical paths, run by `npm run test:smoke`;
+// @regression - validation and edge cases, run only by `npm run test:smoke:all`.
 const request = require('supertest');
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -60,6 +62,40 @@ function decodeJwt(token) {
   return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
 }
 
+// Collects what a suite creates and deletes it in after(), even when a test fails midway,
+// so repeated runs leave the live dev DB as they found it. Deleting a user also deletes
+// its notifications (notifications.relatedUserId is ON DELETE CASCADE).
+function createdData() {
+  const users = [];
+  const projects = [];
+
+  async function remove(token, path) {
+    const res = await api().delete(path).set(auth(token));
+    // 404: the test already deleted it while checking the delete endpoint
+    if (res.status >= 300 && res.status !== 404) {
+      console.warn(`Cleanup DELETE ${path} failed: ${res.status} ${JSON.stringify(res.body)}`);
+    }
+  }
+
+  return {
+    user(id) {
+      users.push(id);
+      return id;
+    },
+    project(id) {
+      projects.push(id);
+      return id;
+    },
+    async cleanup() {
+      if (!users.length && !projects.length) return;
+      const token = await loginAsAdmin();
+      // Projects first: they reference the employees assigned to them
+      for (const id of projects) await remove(token, `/projects/${id}`);
+      for (const id of users) await remove(token, `/users/${id}`);
+    },
+  };
+}
+
 module.exports = {
   API_URL,
   ADMIN,
@@ -71,4 +107,5 @@ module.exports = {
   employeePayload,
   registerEmployee,
   decodeJwt,
+  createdData,
 };

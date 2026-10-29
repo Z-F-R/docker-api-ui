@@ -10,6 +10,8 @@
     "start": "cross-env NODE_ENV=production node app.js",
     "dev": "cross-env NODE_ENV=development nodemon app.js",
     "test": "cross-env NODE_ENV=test mocha tests/**/*.test.js --exit",
+    "test:smoke": "mocha \"smoke/api/**/*.smoke.js\" --timeout 15000 --bail --grep @smoke",
+    "test:smoke:all": "mocha \"smoke/api/**/*.smoke.js\" --timeout 15000",
     "seed:prod": "cross-env NODE_ENV=production npx sequelize-cli db:seed:all",
     "seed:dev": "cross-env NODE_ENV=development npx sequelize-cli db:seed:all",
     "clear-db:prod": "cross-env NODE_ENV=production npx sequelize-cli db:seed:undo:all",

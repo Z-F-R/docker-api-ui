@@ -1,4 +1,3 @@
-// smoke/api/05-notifications.smoke.js
 const { expect } = require('chai');
 const {
   api,
@@ -6,26 +5,24 @@ const {
   loginAsAdmin,
   employeePayload,
   registerEmployee,
+  createdData,
 } = require('./helpers');
 
-describe('@smoke Notifications', () => {
+describe('Notifications', () => {
+  const created = createdData();
   let adminToken;
-  let createdUserId;
 
   before(async () => {
     adminToken = await loginAsAdmin();
   });
 
-  after(async () => {
-    if (createdUserId) {
-      await api().delete(`/users/${createdUserId}`).set(auth(adminToken));
-    }
-  });
+  // Also removes the employee_created notification: it is deleted together with its user
+  after(() => created.cleanup());
 
-  it('creating an employee notifies the admin, who can mark it as read', async () => {
-    const created = await api().post('/users').set(auth(adminToken)).send(employeePayload());
-    expect(created.status).to.equal(201);
-    createdUserId = created.body.user.id;
+  it('creating an employee notifies the admin, who can mark it as read @smoke', async () => {
+    const res = await api().post('/users').set(auth(adminToken)).send(employeePayload());
+    expect(res.status).to.equal(201);
+    const userId = created.user(res.body.user.id);
 
     const list = await api()
       .get('/notifications?type=employee_created&sortBy=createdAt&order=DESC&limit=50')
@@ -33,7 +30,7 @@ describe('@smoke Notifications', () => {
     expect(list.status).to.equal(200);
     expect(list.body.notifications).to.be.an('array');
 
-    const notification = list.body.notifications.find((n) => n.relatedUserId === createdUserId);
+    const notification = list.body.notifications.find((n) => n.relatedUserId === userId);
     expect(notification, 'employee_created notification').to.exist;
     expect(notification.isRead).to.equal(false);
 
@@ -49,14 +46,16 @@ describe('@smoke Notifications', () => {
     expect(reread.isRead).to.equal(true);
   });
 
-  it('notifications reject an invalid sortBy value', async () => {
+  it('notifications reject an invalid sortBy value @regression', async () => {
     const res = await api().get('/notifications?sortBy=password').set(auth(adminToken));
 
     expect(res.status).to.equal(400);
   });
 
-  it('notifications are admin-only', async () => {
+  it('notifications are admin-only @smoke', async () => {
     const employee = await registerEmployee();
+    created.user(employee.id);
+
     const res = await api().get('/notifications').set(auth(employee.token));
 
     expect(res.status).to.equal(403);

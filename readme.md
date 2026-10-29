@@ -168,16 +168,19 @@ The application uses Docker Compose with profile-based execution for different e
 
 1. Clone the repository and navigate to the project directory:
    ```bash
-   git clone https://github.com/dreamquality/employee-management-api.git
-   cd employee-management-api
+   git clone https://github.com/Z-F-R/docker-api-ui.git
+   cd docker-api-ui
    ```
 
 2. Copy environment files:
    ```bash
-   cp .env.example .env
+   cp .env.docker.example .env
    cp .env.test.example .env.test
-   cp .env.e2e.example .env.e2e
    ```
+
+   `.env.docker.example` is `.env.example` plus three settings for running the stack in Docker on your machine:
+   `CORS_ORIGIN` and `VITE_API_URL` for `localhost`, and `COMPOSE_PROFILES=dev`, which makes a plain
+   `docker compose up` start the dev services (every service sits behind a profile).
 
 3. (Optional) Update environment variables in `.env` files for your setup
 
@@ -186,8 +189,10 @@ The application uses Docker Compose with profile-based execution for different e
 #### Development Mode (Recommended)
 Start all services for local development:
 ```bash
-docker compose --profile dev up
+docker compose up --build
 ```
+
+`COMPOSE_PROFILES=dev` from `.env` picks the profile; `docker compose --profile dev up --build` is the explicit form.
 
 This starts:
 - **PostgreSQL Database** (internal only - not exposed to host, accessible via `docker compose exec`)
@@ -211,22 +216,32 @@ Clean up after tests:
 docker compose --profile ci down -v
 ```
 
-#### E2E Testing Mode
-Run end-to-end tests (requires Playwright setup):
+#### Smoke Testing Mode (API + UI)
+Run the black-box API and Playwright UI smoke suites against the running stack:
 ```bash
-docker compose --profile e2e up --abort-on-container-exit --exit-code-from playwright
+docker compose up --build --detach --wait
+docker compose run --rm api-smoke
+docker compose run --rm ui-smoke
 ```
 
-> Note: The `playwright` service in `docker-compose.yml` currently uses a placeholder command that exits with an error. Playwright is not configured by default. Before using the `e2e` profile, configure Playwright in the frontend and add a `test:e2e` script to `frontend/package.json` that runs your E2E tests. Until this is done, running the E2E profile will fail as expected.
+One-shot UI run that starts the stack and exits with the Playwright result:
+```bash
+docker compose --profile e2e up --build --abort-on-container-exit --exit-code-from ui-smoke
+docker compose --profile e2e down -v
+```
+
+Suites, tags, reports and known app issues: [DOCKER_TESTS.md](DOCKER_TESTS.md).
+
 ### Docker Compose Profiles
 
-The application supports three profiles for different use cases:
+The application supports four profiles for different use cases:
 
 | Profile | Services | Use Case |
 |---------|----------|----------|
 | `dev` | app, frontend, db | Local development with hot reload |
 | `ci` | app, db, test | Automated testing in CI/CD pipelines |
-| `e2e` | app, frontend, db, playwright | End-to-end testing |
+| `smoke` | app, frontend, db, api-smoke, ui-smoke | API and UI smoke suites against the running stack |
+| `e2e` | app, frontend, db, ui-smoke | One-shot UI smoke run that exits with the test result |
 
 ### Common Docker Commands
 
@@ -264,8 +279,8 @@ The refactored Docker setup includes:
 
 | Problem | Solution |
 |---------|----------|
-| "no configuration file provided" | Run: `cp .env.example .env` |
-| Services don't start | Ensure you specify a profile: `--profile dev` |
+| "no configuration file provided" | Run: `cp .env.docker.example .env` |
+| `docker compose up` starts nothing | `.env` needs `COMPOSE_PROFILES=dev` (comes with `.env.docker.example`), or pass `--profile dev` |
 | Can't connect to DB from host | DB is internal only, use: `docker compose exec db psql -U postgres` |
 | Health check fails | Check logs: `docker compose logs app` |
 | CORS errors in browser | Check `CORS_ORIGIN` in `.env` file |
@@ -286,6 +301,9 @@ The CI workflow automatically uses Docker Compose:
 ```
 
 This ensures consistency between local development and CI environments.
+
+A second job, `smoke`, starts the stack from `.env.docker.example` and runs `api-smoke` and `ui-smoke`.
+The Playwright report and failure traces are uploaded as the `playwright-report` artifact, also when tests fail.
 
 ## Manual Setup
 

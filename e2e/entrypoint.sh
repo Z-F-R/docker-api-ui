@@ -11,4 +11,14 @@ socat TCP-LISTEN:3000,fork,reuseaddr TCP:"$API_HOST":3000 &
 socat TCP-LISTEN:5173,fork,reuseaddr TCP:"$FRONTEND_HOST":5173 &
 
 echo "Forwarding localhost:3000 -> $API_HOST:3000 and localhost:5173 -> $FRONTEND_HOST:5173"
+
+# Reports are written by root into bind-mounted folders. On a Linux host hand them over
+# to the host user, so they can be deleted without sudo (Docker Desktop does not need it).
+if [ -n "$HOST_UID" ]; then
+  status=0
+  "$@" || status=$?
+  chown -R "$HOST_UID:${HOST_GID:-$HOST_UID}" playwright-report test-results 2>/dev/null || true
+  exit "$status"
+fi
+
 exec "$@"

@@ -1,4 +1,3 @@
-// smoke/api/03-users.smoke.js
 const { expect } = require('chai');
 const {
   ADMIN,
@@ -7,16 +6,20 @@ const {
   loginAsAdmin,
   employeePayload,
   registerEmployee,
+  createdData,
 } = require('./helpers');
 
-describe('@smoke Users', () => {
+describe('Users', () => {
+  const created = createdData();
   let adminToken;
 
   before(async () => {
     adminToken = await loginAsAdmin();
   });
 
-  it('GET /profile returns the current user without the password hash', async () => {
+  after(() => created.cleanup());
+
+  it('GET /profile returns the current user without the password hash @smoke', async () => {
     const res = await api().get('/profile').set(auth(adminToken));
 
     expect(res.status).to.equal(200);
@@ -24,7 +27,7 @@ describe('@smoke Users', () => {
     expect(res.body).to.not.have.property('password');
   });
 
-  it('GET /users returns a paginated list', async () => {
+  it('GET /users returns a paginated list @smoke', async () => {
     const res = await api().get('/users?page=1&limit=5').set(auth(adminToken));
 
     expect(res.status).to.equal(200);
@@ -34,14 +37,14 @@ describe('@smoke Users', () => {
     expect(res.body.page).to.equal(1);
   });
 
-  it('admin can create, read and delete an employee', async () => {
+  it('admin can create, read and delete an employee @smoke', async () => {
     const payload = employeePayload();
 
-    const created = await api().post('/users').set(auth(adminToken)).send(payload);
-    expect(created.status).to.equal(201);
-    const { id } = created.body.user;
-    expect(created.body.user).to.include({ email: payload.email, role: 'employee' });
-    expect(created.body.user).to.not.have.property('password');
+    const res = await api().post('/users').set(auth(adminToken)).send(payload);
+    expect(res.status).to.equal(201);
+    const id = created.user(res.body.user.id);
+    expect(res.body.user).to.include({ email: payload.email, role: 'employee' });
+    expect(res.body.user).to.not.have.property('password');
 
     const fetched = await api().get(`/users/${id}`).set(auth(adminToken));
     expect(fetched.status).to.equal(200);
@@ -54,13 +57,15 @@ describe('@smoke Users', () => {
     expect(gone.status).to.equal(404);
   });
 
-  it('employee is not allowed to create users', async () => {
+  it('employee is not allowed to create users @smoke', async () => {
     const employee = await registerEmployee();
+    created.user(employee.id);
 
     const res = await api()
       .post('/users')
       .set(auth(employee.token))
       .send(employeePayload());
+    if (res.body.user) created.user(res.body.user.id);
 
     expect(res.status).to.equal(403);
   });

@@ -1,16 +1,15 @@
-// smoke/api/01-health-docs.smoke.js
 const { expect } = require('chai');
 const { api } = require('./helpers');
 
-describe('@smoke Health & Swagger', () => {
-  it('GET /health reports the API is up', async () => {
+describe('Health & Swagger', () => {
+  it('GET /health reports the API is up @smoke', async () => {
     const res = await api().get('/health');
 
     expect(res.status).to.equal(200);
     expect(res.body).to.deep.equal({ status: 'ok' });
   });
 
-  it('GET /api-docs.json serves an OpenAPI spec with the core endpoints', async () => {
+  it('GET /api-docs.json serves an OpenAPI spec with the core endpoints @smoke', async () => {
     const res = await api().get('/api-docs.json');
 
     expect(res.status).to.equal(200);
@@ -26,7 +25,7 @@ describe('@smoke Health & Swagger', () => {
     );
   });
 
-  it('GET /api-docs/ serves the Swagger UI page', async () => {
+  it('GET /api-docs/ serves the Swagger UI page @smoke', async () => {
     const res = await api().get('/api-docs/');
 
     expect(res.status).to.equal(200);
@@ -34,14 +33,14 @@ describe('@smoke Health & Swagger', () => {
     expect(res.text).to.include('swagger-ui');
   });
 
-  it('sends security headers (helmet)', async () => {
+  it('sends security headers (helmet) @regression', async () => {
     const res = await api().get('/health');
 
     expect(res.headers).to.have.property('x-content-type-options', 'nosniff');
     expect(res.headers).to.not.have.property('x-powered-by');
   });
 
-  it('unknown route returns 404', async () => {
+  it('unknown route returns 404 @regression', async () => {
     const res = await api().get('/definitely-not-a-route');
 
     expect(res.status).to.equal(404);
